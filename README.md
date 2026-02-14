@@ -4,8 +4,12 @@ Icelandic speech-to-text using a post-trained Whisper model.
 
 ## Setup
 
+Requires **Python 3.9 - 3.12**. The `ctranslate2` engine (used by faster-whisper) ships pre-built binaries for these versions. Python 3.13+ may not work yet.
+
 ```bash
-python -m venv venv
+python3 --version  # check you have 3.9-3.12
+
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
