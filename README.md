@@ -1,120 +1,107 @@
-# Icelandic Voice-to-Text with faster-whisper
+# is-whisper
 
-Transcribe Icelandic audio using fine-tuned Whisper model on M1 CPU with multiple accuracy presets.
+Icelandic speech-to-text using a post-trained Whisper model.
 
 ## Setup
+
 ```bash
-pyenv local 3.12.8
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Quick Start
+The model (~3GB) downloads automatically on first run.
 
-**Standard transcription (balanced):**
-```bash
-python test_run.py
-```
-
-**High accuracy transcription:**
-```bash
-python test_accuracy.py high_accuracy
-```
-
-**Maximum accuracy (slower):**
-```bash
-python test_accuracy.py ultra_accuracy
-```
-
-## Accuracy Presets
-
-Choose the right balance between speed and accuracy:
-
-| Preset | Accuracy | Speed | Use Case |
-|--------|----------|-------|----------|
-| `speed` | Good | ~3-5x real-time | Quick drafts, testing |
-| `balanced` | Very Good | ~5-8x real-time | Default, daily use |
-| `high_accuracy` | Excellent | ~10-15x real-time | Important transcriptions |
-| `ultra_accuracy` | Maximum | ~15-20x real-time | Critical accuracy needs |
-
-### Running with Presets
+For Gemini correction (`--llm`), get an API key from https://aistudio.google.com/ and save it:
 
 ```bash
-# Standard (balanced)
-python test_run.py
-
-# High accuracy
-python test_accuracy.py high_accuracy
-
-# Ultra accuracy (best quality)
-python test_accuracy.py ultra_accuracy
-
-# Speed mode (fastest)
-python test_accuracy.py speed
+echo "your-api-key" > .gemini_key
 ```
 
-## Model
-- `language-and-voice-lab/whisper-large-icelandic-62640-steps-967h-ct2`
-- Fine-tuned on 967 hours of Icelandic speech
-- ~3GB download on first run
-- Cached in `~/.cache/huggingface/hub/`
+## Why
 
-## Performance (M1 CPU)
+There aren't many good open source options for Icelandic speech-to-text. The [whisper-large-icelandic](https://huggingface.co/language-and-voice-lab/whisper-large-icelandic-62640-steps-967h-ct2) model from Language and Voice Lab is post-trained on 967 hours of Icelandic speech and runs locally via [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
 
-**Balanced mode:** ~5-8x real-time (1 min audio = 5-8 min processing)
-**High accuracy:** ~10-15x real-time (1 min audio = 10-15 min processing)
-**Ultra accuracy:** ~15-20x real-time (1 min audio = 15-20 min processing)
+It's not great — accuracy is rough and it outputs raw text with no punctuation or capitalization. But it's the best we found for Icelandic without paying for a cloud API.
 
-## Accuracy Improvements
+To compensate, we added an optional Google Gemini step (`--llm`) that takes the raw output and fixes punctuation, capitalization, and grammar. It doesn't fix what the model heard wrong, but it makes the output actually readable.
 
-The enhanced version includes:
+## Usage
 
-- **Higher beam search** (`beam_size=10+`) - Explores more possibilities
-- **Temperature fallback** - Multiple attempts for uncertain segments
-- **Best-of sampling** - Picks best from multiple candidates
-- **Compression filtering** - Removes repetitions
-- **Log probability filtering** - Filters low-confidence segments
-- **Context conditioning** - Uses previous text for better continuity
-- **Optional VAD** - Can disable for maximum accuracy (slower)
+```
+python transcribe.py <audio_file> [mode] [options]
+```
 
-## LLM Post-Processing (Optional)
+### Arguments
 
-Enhance transcriptions with **Gemini 2.5 Flash** AI correction (free tier):
+| Argument | Description |
+|----------|-------------|
+| `audio_file` | Path to audio file (M4A, MP3, WAV, FLAC, OGG) |
+
+### Modes
+
+| Mode | beam_size | Description |
+|------|-----------|-------------|
+| `fast` | 1 | Fastest, less accurate |
+| `balanced` | 5 | Default |
+| `accurate` | 10 | Slowest, best quality |
+
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `--llm`, `-l` | Post-process with Google Gemini to add punctuation and fix grammar. Requires `.gemini_key` |
+| `--help`, `-h` | Show help |
+
+### Output
+
+All output goes to `transcripts/`:
+
+| File | Content |
+|------|---------|
+| `<name>_transcript.txt` | Plain text |
+| `<name>_transcript.json` | Text with timestamps and metadata |
+| `<name>_corrected.txt` | Punctuation-fixed text (only with `--llm`) |
+
+## Examples
+
+**Basic transcription:**
 
 ```bash
-# Add punctuation and fix grammar
-python transcribe_file.py audio/recording.m4a --llm
+$ python transcribe.py audio/recording.m4a
+Transcribing: audio/recording.m4a (balanced mode)
+Loading model...
+Transcribing: audio/recording.m4a
+[0.00s -> 4.82s] þetta er tilraun til þess að sjá hvort þetta virkar
+[4.82s -> 8.10s] ég er að tala á íslensku
+
+Duration: 8.1s | Time: 42.3s
+Saved: transcripts/recording_transcript.txt
+Done!
 ```
 
-**Features:**
-- Adds punctuation (commas, periods, question marks)
-- Fixes spelling and grammar
-- Corrects capitalization
-- Preserves original meaning and wording
-- **Structured JSON output** with confidence scores and change summaries
+**Fast mode with Gemini correction:**
 
-**Output format:**
-```json
-{
-  "corrected_text": "Þetta er leiðréttur texti...",
-  "confidence": 0.95,
-  "changes_summary": "Bætti við greinarmerki og lagaði hástafi"
-}
-```
-
-**Setup:**
-1. Get API key from https://aistudio.google.com/
-2. Save to `.gemini_key` file in project root
-3. Use `--llm` flag when transcribing
-
-**Example:**
 ```bash
-# Fast transcription with AI correction
-python transcribe_file.py audio/meeting.m4a fast --llm
+$ python transcribe.py audio/recording.m4a fast --llm
+Transcribing: audio/recording.m4a (fast mode)
+Loading model...
+Transcribing: audio/recording.m4a
+[0.00s -> 4.82s] þetta er tilraun til þess að sjá hvort þetta virkar
+[4.82s -> 8.10s] ég er að tala á íslensku
+
+Duration: 8.1s | Time: 12.5s
+Saved: transcripts/recording_transcript.txt
+
+Fixing punctuation with Gemini...
+Correcting with Gemini...
+Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
+Saved: transcripts/recording_corrected.txt
+Done!
 ```
 
-Creates:
-- `transcripts/meeting_transcript.txt` - Original
-- `transcripts/meeting_corrected.txt` - With punctuation and corrections
-- `transcripts/meeting_transcript.json` - Metadata with timestamps
+**Corrected output:**
+
+```
+Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+```
