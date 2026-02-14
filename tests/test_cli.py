@@ -9,6 +9,8 @@ def test_help_flag():
     assert r.returncode == 0
     assert "Usage:" in r.stdout
     assert "fast" in r.stdout
+    assert "--save" in r.stdout
+    assert "--verbose" in r.stdout
 
 
 def test_no_args_shows_help():
@@ -20,4 +22,4 @@ def test_no_args_shows_help():
 def test_missing_file_exits_1():
     r = subprocess.run([sys.executable, "transcribe.py", "nope.m4a"], capture_output=True, text=True)
     assert r.returncode == 1
-    assert "not found" in r.stdout.lower()
+    assert "not found" in r.stderr.lower()

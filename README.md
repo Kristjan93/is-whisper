@@ -64,12 +64,13 @@ python transcribe.py <audio_file> [mode] [options]
 
 | Flag | Description |
 |------|-------------|
-| `--llm`, `-l` | Post-process with Google Gemini to add punctuation and fix grammar. Requires `.gemini_key` |
-| `--help`, `-h` | Show help |
+| `--llm`, `-l` | Fix punctuation/grammar with Google Gemini (needs `.gemini_key`) |
+| `--save`, `-s` | Save output to `transcripts/` directory |
+| `--verbose`, `-v` | Show timestamps, timing, and progress |
 
 ### Output
 
-All output goes to `transcripts/`:
+By default, the transcribed text is printed to stdout. With `--save`, files are written to `transcripts/`:
 
 | File | Content |
 |------|---------|
@@ -79,56 +80,48 @@ All output goes to `transcripts/`:
 
 ## Examples
 
-### Basic transcription
+### Default — just the text
 
 ```bash
 $ python transcribe.py audio/recording.m4a
-```
-
-```
-Transcribing: audio/recording.m4a (balanced mode)
-Loading model...
-Transcribing: audio/recording.m4a
-  0.00s -> 4.82s  þetta er tilraun til þess að sjá hvort þetta virkar
-  4.82s -> 8.10s  ég er að tala á íslensku
-
-Duration: 8.1s | Time: 42.3s
-Saved: transcripts/recording_transcript.txt
-
-Done!
-```
-
-### Fast mode with Gemini correction
-
-```bash
-$ python transcribe.py audio/recording.m4a fast --llm
-```
-
-```
-Transcribing: audio/recording.m4a (fast mode)
-Loading model...
-Transcribing: audio/recording.m4a
-  0.00s -> 4.82s  þetta er tilraun til þess að sjá hvort þetta virkar
-  4.82s -> 8.10s  ég er að tala á íslensku
-
-Duration: 8.1s | Time: 12.5s
-Saved: transcripts/recording_transcript.txt
-
-Fixing punctuation with Gemini...
-Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
-Saved: transcripts/recording_corrected.txt
-
-Done!
-```
-
-### Before / after Gemini
-
-**Raw transcript:**
-```
 þetta er tilraun til þess að sjá hvort þetta virkar ég er að tala á íslensku
 ```
 
-**After `--llm`:**
-```
+### With Gemini correction
+
+```bash
+$ python transcribe.py audio/recording.m4a --llm
 Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+```
+
+### Verbose mode
+
+```bash
+$ python transcribe.py audio/recording.m4a --llm -v
+Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+```
+
+stderr shows progress:
+
+```
+Loading model...
+Transcribing: audio/recording.m4a
+  0.00s -> 4.82s  þetta er tilraun til þess að sjá hvort þetta virkar
+  4.82s -> 8.10s  ég er að tala á íslensku
+Duration: 8.1s | Time: 42.3s
+Fixing punctuation with Gemini...
+Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
+```
+
+### Save to files
+
+```bash
+$ python transcribe.py audio/recording.m4a --llm --save
+Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+```
+
+```
+Saved: transcripts/recording_transcript.txt
+Saved: transcripts/recording_transcript.json
+Saved: transcripts/recording_corrected.txt
 ```

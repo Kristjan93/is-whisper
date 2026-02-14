@@ -1,12 +1,12 @@
 """Fix punctuation and grammar in Icelandic transcriptions using Google Gemini."""
 
+import sys
 from google import genai
 from google.genai import types
 from pathlib import Path
 from pydantic import BaseModel, Field
 
 GREEN = "\033[32m"
-YELLOW = "\033[33m"
 RED = "\033[31m"
 DIM = "\033[2m"
 RESET = "\033[0m"
@@ -66,11 +66,11 @@ Skila AÐEINS leiðréttum texta, engum útskýringum."""
 
         result = response.parsed
         if verbose:
-            print(f"{GREEN}Corrected{RESET} {DIM}({result.confidence:.0%} confidence): {result.changes_summary}{RESET}")
+            print(f"{GREEN}Corrected{RESET} {DIM}({result.confidence:.0%} confidence): {result.changes_summary}{RESET}", file=sys.stderr)
 
         return result.corrected_text
 
     except Exception as e:
         if verbose:
-            print(f"{RED}Correction failed:{RESET} {e}")
+            print(f"{RED}Correction failed:{RESET} {e}", file=sys.stderr)
         return text

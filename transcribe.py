@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Transcribe Icelandic audio using faster-whisper.
-Usage: python transcribe.py <audio_file> [fast|balanced|accurate] [--llm]
+Usage: python transcribe.py <audio_file> [fast|balanced|accurate] [--llm] [--save] [--verbose]
 """
 
 import sys
@@ -23,21 +23,20 @@ MODES = {
 DIM = "\033[2m"
 CYAN = "\033[36m"
 GREEN = "\033[32m"
-YELLOW = "\033[33m"
 RED = "\033[31m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
 
-def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
+def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=False):
     """Transcribe Icelandic audio. Returns dict with full_text, segments, metadata."""
     if verbose:
-        print(f"{DIM}Loading model...{RESET}")
+        print(f"{DIM}Loading model...{RESET}", file=sys.stderr)
 
     model = WhisperModel(MODEL, device="cpu", compute_type="int8", cpu_threads=os.cpu_count())
 
     if verbose:
-        print(f"{DIM}Transcribing: {audio_path}{RESET}")
+        print(f"{DIM}Transcribing: {audio_path}{RESET}", file=sys.stderr)
 
     start = time.time()
 
@@ -64,13 +63,16 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
         if (seg.end - seg.start) < 0.3 and len(text) <= 3:
             continue
         if verbose:
-            print(f"  {DIM}{seg.start:.2f}s -> {seg.end:.2f}s{RESET}  {text}")
+            print(f"  {DIM}{seg.start:.2f}s -> {seg.end:.2f}s{RESET}  {text}", file=sys.stderr)
         texts.append(text)
         details.append({"start": seg.start, "end": seg.end, "text": text})
 
     elapsed = time.time() - start
 
-    result = {
+    if verbose:
+        print(f"{DIM}Duration: {info.duration:.1f}s | Time: {elapsed:.1f}s{RESET}", file=sys.stderr)
+
+    return {
         "full_text": " ".join(texts),
         "segments": details,
         "metadata": {
@@ -82,7 +84,9 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
         },
     }
 
-    # Save outputs
+
+def save_result(result, audio_path, corrected_text=None):
+    """Save transcript files to transcripts/ directory."""
     out = Path("transcripts")
     out.mkdir(exist_ok=True)
     stem = Path(audio_path).stem
@@ -91,11 +95,12 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
     with open(out / f"{stem}_transcript.json", "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
-    if verbose:
-        print(f"\n{DIM}Duration: {info.duration:.1f}s | Time: {elapsed:.1f}s{RESET}")
-        print(f"{GREEN}Saved:{RESET} transcripts/{stem}_transcript.txt")
+    print(f"{GREEN}Saved:{RESET} transcripts/{stem}_transcript.txt", file=sys.stderr)
+    print(f"{GREEN}Saved:{RESET} transcripts/{stem}_transcript.json", file=sys.stderr)
 
-    return result
+    if corrected_text:
+        (out / f"{stem}_corrected.txt").write_text(corrected_text, encoding="utf-8")
+        print(f"{GREEN}Saved:{RESET} transcripts/{stem}_corrected.txt", file=sys.stderr)
 
 
 if __name__ == "__main__":
@@ -108,38 +113,44 @@ if __name__ == "__main__":
         print(f"  accurate   {DIM}beam_size=10, best quality{RESET}")
         print()
         print(f"{BOLD}Options:{RESET}")
-        print(f"  --llm, -l  {DIM}Fix punctuation/grammar with Google Gemini (needs .gemini_key){RESET}")
+        print(f"  --llm, -l      {DIM}Fix punctuation/grammar with Google Gemini (needs .gemini_key){RESET}")
+        print(f"  --save, -s     {DIM}Save output to transcripts/ directory{RESET}")
+        print(f"  --verbose, -v  {DIM}Show timestamps, timing, and progress{RESET}")
         print()
         print(f"{BOLD}Examples:{RESET}")
         print(f"  python transcribe.py audio/recording.m4a")
         print(f"  python transcribe.py audio/recording.m4a fast --llm")
+        print(f"  python transcribe.py audio/recording.m4a --llm --save -v")
         sys.exit(0)
 
     audio_path = sys.argv[1]
     if not Path(audio_path).exists():
-        print(f"{RED}Error:{RESET} File not found: {audio_path}")
+        print(f"{RED}Error:{RESET} File not found: {audio_path}", file=sys.stderr)
         sys.exit(1)
 
-    use_llm = "--llm" in sys.argv or "-l" in sys.argv
+    args = sys.argv[2:]
+    use_llm = "--llm" in args or "-l" in args
+    save = "--save" in args or "-s" in args
+    verbose = "--verbose" in args or "-v" in args
+
     mode = "balanced"
-    for arg in sys.argv[2:]:
+    for arg in args:
         if not arg.startswith("-") and arg in MODES:
             mode = arg
 
-    print(f"{BOLD}Transcribing:{RESET} {audio_path} {DIM}({mode} mode){RESET}")
-    result = transcribe(audio_path=audio_path, verbose=True, **MODES[mode])
+    result = transcribe(audio_path=audio_path, verbose=verbose, **MODES[mode])
+    text = result["full_text"]
 
+    corrected_text = None
     if use_llm:
         from correction import correct_icelandic
 
-        print(f"\n{CYAN}Fixing punctuation with Gemini...{RESET}")
-        try:
-            corrected = correct_icelandic(result["full_text"], verbose=True)
-            stem = Path(audio_path).stem
-            corrected_file = Path("transcripts") / f"{stem}_corrected.txt"
-            corrected_file.write_text(corrected, encoding="utf-8")
-            print(f"{GREEN}Saved:{RESET} transcripts/{stem}_corrected.txt")
-        except FileNotFoundError as e:
-            print(f"{RED}Error:{RESET} {e}")
+        if verbose:
+            print(f"{CYAN}Fixing punctuation with Gemini...{RESET}", file=sys.stderr)
+        corrected_text = correct_icelandic(text, verbose=verbose)
+        text = corrected_text
 
-    print(f"\n{GREEN}{BOLD}Done!{RESET}")
+    print(text)
+
+    if save:
+        save_result(result, audio_path, corrected_text)

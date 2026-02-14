@@ -3,7 +3,7 @@
 import json
 from unittest.mock import patch, MagicMock
 
-from transcribe import transcribe, MODEL, MODES
+from transcribe import transcribe, save_result, MODEL, MODES
 
 
 def make_segment(start, end, text):
@@ -96,18 +96,34 @@ def test_empty_audio():
     assert result["segments"] == []
 
 
-# --- File output ---
+# --- No files saved by default ---
 
-def test_saves_txt_and_json(monkeypatch, tmp_path):
+def test_transcribe_does_not_save_files(monkeypatch, tmp_path):
+    """transcribe() should not write any files — saving is opt-in via save_result()."""
     monkeypatch.chdir(tmp_path)
     with mock_whisper([make_segment(0.0, 3.0, "Halló")], make_info(duration=3.0)):
-        transcribe("test_audio.m4a", verbose=False)
+        transcribe("test.m4a", verbose=False)
 
-    txt = tmp_path / "transcripts" / "test_audio_transcript.txt"
-    jsn = tmp_path / "transcripts" / "test_audio_transcript.json"
+    assert not (tmp_path / "transcripts").exists()
 
-    assert txt.read_text(encoding="utf-8") == "Halló"
-    assert json.loads(jsn.read_text())["full_text"] == "Halló"
+
+# --- save_result writes files ---
+
+def test_save_result_creates_files(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    result = {"full_text": "Halló", "segments": [], "metadata": {}}
+    save_result(result, "test.m4a")
+
+    assert (tmp_path / "transcripts" / "test_transcript.txt").read_text() == "Halló"
+    assert json.loads((tmp_path / "transcripts" / "test_transcript.json").read_text())["full_text"] == "Halló"
+
+
+def test_save_result_with_correction(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    result = {"full_text": "halló", "segments": [], "metadata": {}}
+    save_result(result, "test.m4a", corrected_text="Halló.")
+
+    assert (tmp_path / "transcripts" / "test_corrected.txt").read_text() == "Halló."
 
 
 # --- Parameters reach the model ---
