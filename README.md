@@ -65,43 +65,56 @@ All output goes to `transcripts/`:
 
 ## Examples
 
-**Basic transcription:**
+### Basic transcription
 
 ```bash
 $ python transcribe.py audio/recording.m4a
+```
+
+```
 Transcribing: audio/recording.m4a (balanced mode)
 Loading model...
 Transcribing: audio/recording.m4a
-[0.00s -> 4.82s] þetta er tilraun til þess að sjá hvort þetta virkar
-[4.82s -> 8.10s] ég er að tala á íslensku
+  0.00s -> 4.82s  þetta er tilraun til þess að sjá hvort þetta virkar
+  4.82s -> 8.10s  ég er að tala á íslensku
 
 Duration: 8.1s | Time: 42.3s
 Saved: transcripts/recording_transcript.txt
+
 Done!
 ```
 
-**Fast mode with Gemini correction:**
+### Fast mode with Gemini correction
 
 ```bash
 $ python transcribe.py audio/recording.m4a fast --llm
+```
+
+```
 Transcribing: audio/recording.m4a (fast mode)
 Loading model...
 Transcribing: audio/recording.m4a
-[0.00s -> 4.82s] þetta er tilraun til þess að sjá hvort þetta virkar
-[4.82s -> 8.10s] ég er að tala á íslensku
+  0.00s -> 4.82s  þetta er tilraun til þess að sjá hvort þetta virkar
+  4.82s -> 8.10s  ég er að tala á íslensku
 
 Duration: 8.1s | Time: 12.5s
 Saved: transcripts/recording_transcript.txt
 
 Fixing punctuation with Gemini...
-Correcting with Gemini...
 Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
 Saved: transcripts/recording_corrected.txt
+
 Done!
 ```
 
-**Corrected output:**
+### Before / after Gemini
 
+**Raw transcript:**
+```
+þetta er tilraun til þess að sjá hvort þetta virkar ég er að tala á íslensku
+```
+
+**After `--llm`:**
 ```
 Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
 ```

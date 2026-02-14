@@ -5,6 +5,12 @@ from google.genai import types
 from pathlib import Path
 from pydantic import BaseModel, Field
 
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+RED = "\033[31m"
+DIM = "\033[2m"
+RESET = "\033[0m"
+
 
 class CorrectionResult(BaseModel):
     corrected_text: str = Field(description="Corrected Icelandic text with punctuation and grammar")
@@ -24,9 +30,6 @@ def load_api_key():
 
 def correct_icelandic(text, verbose=False):
     """Send text to Gemini to fix punctuation and grammar. Returns corrected text."""
-    if verbose:
-        print("Correcting with Gemini...")
-
     client = genai.Client(api_key=load_api_key())
 
     prompt = f"""Leiðrétta eftirfarandi íslenskan texta:
@@ -63,11 +66,11 @@ Skila AÐEINS leiðréttum texta, engum útskýringum."""
 
         result = response.parsed
         if verbose:
-            print(f"Corrected ({result.confidence:.0%} confidence): {result.changes_summary}")
+            print(f"{GREEN}Corrected{RESET} {DIM}({result.confidence:.0%} confidence): {result.changes_summary}{RESET}")
 
         return result.corrected_text
 
     except Exception as e:
         if verbose:
-            print(f"Correction failed: {e}")
+            print(f"{RED}Correction failed:{RESET} {e}")
         return text

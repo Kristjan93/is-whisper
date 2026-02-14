@@ -7,6 +7,7 @@ Usage: python transcribe.py <audio_file> [fast|balanced|accurate] [--llm]
 import sys
 import time
 import json
+import os
 from pathlib import Path
 from faster_whisper import WhisperModel
 
@@ -18,16 +19,25 @@ MODES = {
     "accurate": {"beam_size": 10, "vad_filter": False},
 }
 
+# ANSI colors
+DIM = "\033[2m"
+CYAN = "\033[36m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+RED = "\033[31m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
 
 def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
     """Transcribe Icelandic audio. Returns dict with full_text, segments, metadata."""
     if verbose:
-        print("Loading model...")
+        print(f"{DIM}Loading model...{RESET}")
 
-    model = WhisperModel(MODEL, device="cpu", compute_type="int8", cpu_threads=8)
+    model = WhisperModel(MODEL, device="cpu", compute_type="int8", cpu_threads=os.cpu_count())
 
     if verbose:
-        print(f"Transcribing: {audio_path}")
+        print(f"{DIM}Transcribing: {audio_path}{RESET}")
 
     start = time.time()
 
@@ -54,7 +64,7 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
         if (seg.end - seg.start) < 0.3 and len(text) <= 3:
             continue
         if verbose:
-            print(f"[{seg.start:.2f}s -> {seg.end:.2f}s] {text}")
+            print(f"  {DIM}{seg.start:.2f}s -> {seg.end:.2f}s{RESET}  {text}")
         texts.append(text)
         details.append({"start": seg.start, "end": seg.end, "text": text})
 
@@ -82,32 +92,32 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=True):
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     if verbose:
-        print(f"\nDuration: {info.duration:.1f}s | Time: {elapsed:.1f}s")
-        print(f"Saved: transcripts/{stem}_transcript.txt")
+        print(f"\n{DIM}Duration: {info.duration:.1f}s | Time: {elapsed:.1f}s{RESET}")
+        print(f"{GREEN}Saved:{RESET} transcripts/{stem}_transcript.txt")
 
     return result
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
-        print("Usage: python transcribe.py <audio_file> [fast|balanced|accurate] [--llm]")
+        print(f"{BOLD}Usage:{RESET} python transcribe.py <audio_file> [mode] [options]")
         print()
-        print("Modes:")
-        print("  fast       beam_size=1, fastest")
-        print("  balanced   beam_size=5, default")
-        print("  accurate   beam_size=10, best quality")
+        print(f"{BOLD}Modes:{RESET}")
+        print(f"  fast       {DIM}beam_size=1, fastest{RESET}")
+        print(f"  balanced   {DIM}beam_size=5, default{RESET}")
+        print(f"  accurate   {DIM}beam_size=10, best quality{RESET}")
         print()
-        print("Options:")
-        print("  --llm, -l  Fix punctuation/grammar with Google Gemini (needs .gemini_key)")
+        print(f"{BOLD}Options:{RESET}")
+        print(f"  --llm, -l  {DIM}Fix punctuation/grammar with Google Gemini (needs .gemini_key){RESET}")
         print()
-        print("Examples:")
-        print("  python transcribe.py audio/recording.m4a")
-        print("  python transcribe.py audio/recording.m4a fast --llm")
+        print(f"{BOLD}Examples:{RESET}")
+        print(f"  python transcribe.py audio/recording.m4a")
+        print(f"  python transcribe.py audio/recording.m4a fast --llm")
         sys.exit(0)
 
     audio_path = sys.argv[1]
     if not Path(audio_path).exists():
-        print(f"Error: File not found: {audio_path}")
+        print(f"{RED}Error:{RESET} File not found: {audio_path}")
         sys.exit(1)
 
     use_llm = "--llm" in sys.argv or "-l" in sys.argv
@@ -116,20 +126,20 @@ if __name__ == "__main__":
         if not arg.startswith("-") and arg in MODES:
             mode = arg
 
-    print(f"Transcribing: {audio_path} ({mode} mode)")
+    print(f"{BOLD}Transcribing:{RESET} {audio_path} {DIM}({mode} mode){RESET}")
     result = transcribe(audio_path=audio_path, verbose=True, **MODES[mode])
 
     if use_llm:
         from correction import correct_icelandic
 
-        print("\nFixing punctuation with Gemini...")
+        print(f"\n{CYAN}Fixing punctuation with Gemini...{RESET}")
         try:
             corrected = correct_icelandic(result["full_text"], verbose=True)
             stem = Path(audio_path).stem
             corrected_file = Path("transcripts") / f"{stem}_corrected.txt"
             corrected_file.write_text(corrected, encoding="utf-8")
-            print(f"Saved: transcripts/{stem}_corrected.txt")
+            print(f"{GREEN}Saved:{RESET} transcripts/{stem}_corrected.txt")
         except FileNotFoundError as e:
-            print(f"Error: {e}")
+            print(f"{RED}Error:{RESET} {e}")
 
-    print("Done!")
+    print(f"\n{GREEN}{BOLD}Done!{RESET}")
