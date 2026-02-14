@@ -113,14 +113,14 @@ if __name__ == "__main__":
         print(f"  accurate   {DIM}beam_size=10, best quality{RESET}")
         print()
         print(f"{BOLD}Options:{RESET}")
-        print(f"  --llm, -l      {DIM}Fix punctuation/grammar with Google Gemini (needs .gemini_key){RESET}")
+        print(f"  --llm, -l      {DIM}Fix punctuation/grammar with Google Gemini{RESET}")
         print(f"  --save, -s     {DIM}Save output to transcripts/ directory{RESET}")
         print(f"  --verbose, -v  {DIM}Show timestamps, timing, and progress{RESET}")
         print()
         print(f"{BOLD}Examples:{RESET}")
-        print(f"  python transcribe.py audio/recording.m4a")
-        print(f"  python transcribe.py audio/recording.m4a fast --llm")
-        print(f"  python transcribe.py audio/recording.m4a --llm --save -v")
+        print(f"  python transcribe.py audio/sample.m4a")
+        print(f"  python transcribe.py audio/sample.m4a fast --llm")
+        print(f"  python transcribe.py audio/sample.m4a --llm --save -v")
         sys.exit(0)
 
     audio_path = sys.argv[1]
@@ -128,15 +128,30 @@ if __name__ == "__main__":
         print(f"{RED}Error:{RESET} File not found: {audio_path}", file=sys.stderr)
         sys.exit(1)
 
-    args = sys.argv[2:]
-    use_llm = "--llm" in args or "-l" in args
-    save = "--save" in args or "-s" in args
-    verbose = "--verbose" in args or "-v" in args
-
+    # Parse mode (optional positional arg, must come right after audio file)
     mode = "balanced"
-    for arg in args:
-        if not arg.startswith("-") and arg in MODES:
-            mode = arg
+    flags_start = 2
+    if len(sys.argv) > 2 and not sys.argv[2].startswith("-"):
+        if sys.argv[2] in MODES:
+            mode = sys.argv[2]
+            flags_start = 3
+        else:
+            print(f"{RED}Error:{RESET} Invalid mode '{sys.argv[2]}'. Must be one of: fast, balanced, accurate", file=sys.stderr)
+            print(f"Run 'python transcribe.py --help' for usage.", file=sys.stderr)
+            sys.exit(1)
+
+    # Parse flags
+    known_flags = {"--llm", "-l", "--save", "-s", "--verbose", "-v"}
+    flags = sys.argv[flags_start:]
+    for flag in flags:
+        if flag not in known_flags:
+            print(f"{RED}Error:{RESET} Unknown argument '{flag}'", file=sys.stderr)
+            print(f"Run 'python transcribe.py --help' for usage.", file=sys.stderr)
+            sys.exit(1)
+
+    use_llm = "--llm" in flags or "-l" in flags
+    save = "--save" in flags or "-s" in flags
+    verbose = "--verbose" in flags or "-v" in flags
 
     result = transcribe(audio_path=audio_path, verbose=verbose, **MODES[mode])
     text = result["full_text"]

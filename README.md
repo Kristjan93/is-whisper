@@ -16,26 +16,57 @@ pip install -r requirements.txt
 
 The model (~3GB) downloads automatically on first run.
 
-For Gemini correction (`--llm`), get an API key from https://aistudio.google.com/ and save it:
+For Gemini correction (`--llm`), get an API key from https://aistudio.google.com/ and either:
 
 ```bash
+export GEMINI_API_KEY="your-api-key"
+# or
 echo "your-api-key" > .gemini_key
 ```
 
 ## Try it
 
-You can go from voice to text in under a minute:
+A sample audio file is included (from [Mozilla Common Voice](https://commonvoice.mozilla.org/is) — Icelandic) so you can try it right away. The clip says: *"Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson."*
 
-1. Open **Voice Memos** on your Mac (it's already installed)
-2. Hit record, say something in Icelandic, stop
-3. Right-click the recording → **Share** → **Save to Files** → save it or drag it into the `audio/` folder
-4. Run:
+```bash
+python transcribe.py audio/sample.m4a
+```
+
+Raw output — no punctuation, no capitalization, and the first syllable gets clipped:
+```
+námsmaður í krossavík var lýtingur arnbjarnarson
+```
+
+Now add `--llm` and Gemini fixes all of that:
+```bash
+python transcribe.py audio/sample.m4a --llm
+```
+```
+Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
+```
+
+The reference transcript is in `audio/sample_transcript.txt`.
+
+Or record your own — open **Voice Memos** on your Mac, say something in Icelandic, drag the recording into `audio/`, and run:
 
 ```bash
 python transcribe.py audio/your-recording.m4a --llm
 ```
 
-That's it. Your spoken Icelandic comes back as text with punctuation. No account needed, no cloud service, everything runs on your machine.
+That's it. Your spoken Icelandic comes back as clean, punctuated text. No account needed, no cloud service, everything runs on your machine.
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["🎙️ Audio"] --> B["Whisper\n(local, CPU)"]
+    B --> C["námsmaður í krossavík\nvar lýtingur arnbjarnarson"]
+    C -->|--llm| D["Gemini"]
+    D --> E["Landnámsmaður í Krossavík\nvar Lýtingur Arnbjarnarson."]
+
+    style C fill:#fee,stroke:#c33,color:#333
+    style E fill:#efe,stroke:#3a3,color:#333
+```
 
 ## Why
 
@@ -43,7 +74,7 @@ There aren't many good open source options for Icelandic speech-to-text. The [wh
 
 It's not great — accuracy is rough and it outputs raw text with no punctuation or capitalization. But it's the best we found for Icelandic without paying for a cloud API.
 
-To compensate, we added an optional Google Gemini step (`--llm`) that takes the raw output and fixes punctuation, capitalization, and grammar. It doesn't fix what the model heard wrong, but it makes the output actually readable.
+To compensate, we added an optional Google Gemini step (`--llm`) that takes the raw output and fixes punctuation, capitalization, and grammar. It can even recover missing words from context — like restoring "landnámsmaður" from "námsmaður" — on top of adding proper capitalization and punctuation.
 
 ## Usage
 
@@ -69,7 +100,7 @@ python transcribe.py <audio_file> [mode] [options]
 
 | Flag | Description |
 |------|-------------|
-| `--llm`, `-l` | Fix punctuation/grammar with Google Gemini (needs `.gemini_key`) |
+| `--llm`, `-l` | Fix punctuation/grammar with Google Gemini |
 | `--save`, `-s` | Save output to `transcripts/` directory |
 | `--verbose`, `-v` | Show timestamps, timing, and progress |
 
@@ -88,32 +119,31 @@ By default, the transcribed text is printed to stdout. With `--save`, files are 
 ### Default — just the text
 
 ```bash
-$ python transcribe.py audio/recording.m4a
-þetta er tilraun til þess að sjá hvort þetta virkar ég er að tala á íslensku
+$ python transcribe.py audio/sample.m4a
+námsmaður í krossavík var lýtingur arnbjarnarson
 ```
 
 ### With Gemini correction
 
 ```bash
-$ python transcribe.py audio/recording.m4a --llm
-Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+$ python transcribe.py audio/sample.m4a --llm
+Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
 ```
 
 ### Verbose mode
 
 ```bash
-$ python transcribe.py audio/recording.m4a --llm -v
-Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+$ python transcribe.py audio/sample.m4a --llm -v
+Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
 ```
 
 stderr shows progress:
 
 ```
 Loading model...
-Transcribing: audio/recording.m4a
-  0.00s -> 4.82s  þetta er tilraun til þess að sjá hvort þetta virkar
-  4.82s -> 8.10s  ég er að tala á íslensku
-Duration: 8.1s | Time: 42.3s
+Transcribing: audio/sample.m4a
+  0.11s -> 0.61s  námsmaður í krossavík var lýtingur arnbjarnarson
+Duration: 5.0s | Time: 15.2s
 Fixing punctuation with Gemini...
 Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
 ```
@@ -121,12 +151,12 @@ Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
 ### Save to files
 
 ```bash
-$ python transcribe.py audio/recording.m4a --llm --save
-Þetta er tilraun til þess að sjá hvort þetta virkar. Ég er að tala á íslensku.
+$ python transcribe.py audio/sample.m4a --llm --save
+Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
 ```
 
 ```
-Saved: transcripts/recording_transcript.txt
-Saved: transcripts/recording_transcript.json
-Saved: transcripts/recording_corrected.txt
+Saved: transcripts/sample_transcript.txt
+Saved: transcripts/sample_transcript.json
+Saved: transcripts/sample_corrected.txt
 ```

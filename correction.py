@@ -1,5 +1,6 @@
 """Fix punctuation and grammar in Icelandic transcriptions using Google Gemini."""
 
+import os
 import sys
 from google import genai
 from google.genai import types
@@ -19,10 +20,13 @@ class CorrectionResult(BaseModel):
 
 
 def load_api_key():
+    env_key = os.environ.get("GEMINI_API_KEY")
+    if env_key:
+        return env_key.strip()
     key_file = Path(".gemini_key")
     if not key_file.exists():
         raise FileNotFoundError(
-            "Gemini API key not found. Save your key to .gemini_key file.\n"
+            "Gemini API key not found. Set GEMINI_API_KEY env var or save your key to .gemini_key file.\n"
             "Get one at https://aistudio.google.com/"
         )
     return key_file.read_text().strip()

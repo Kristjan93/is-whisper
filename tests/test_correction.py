@@ -10,12 +10,27 @@ from correction import load_api_key, correct_icelandic, CorrectionResult
 
 def test_load_api_key(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     (tmp_path / ".gemini_key").write_text("test-key-123\n")
     assert load_api_key() == "test-key-123"
 
 
+def test_load_api_key_from_env(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GEMINI_API_KEY", "env-key-456")
+    assert load_api_key() == "env-key-456"
+
+
+def test_env_var_takes_precedence_over_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".gemini_key").write_text("file-key\n")
+    monkeypatch.setenv("GEMINI_API_KEY", "env-key")
+    assert load_api_key() == "env-key"
+
+
 def test_load_api_key_missing(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     with pytest.raises(FileNotFoundError, match="Gemini API key not found"):
         load_api_key()
 
