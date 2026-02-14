@@ -32,8 +32,6 @@ On Mac, open **Voice Memos** (built-in app), record a short clip, then right-cli
 python transcribe.py audio/your-recording.m4a --llm
 ```
 
-You can also use **QuickTime Player** (File > New Audio Recording) which exports to `.m4a` as well.
-
 ## Why
 
 There aren't many good open source options for Icelandic speech-to-text. The [whisper-large-icelandic](https://huggingface.co/language-and-voice-lab/whisper-large-icelandic-62640-steps-967h-ct2) model from Language and Voice Lab is post-trained on 967 hours of Icelandic speech and runs locally via [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
