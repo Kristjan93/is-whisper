@@ -28,7 +28,7 @@ You can go from voice to text in under a minute:
 
 1. Open **Voice Memos** on your Mac (it's already installed)
 2. Hit record, say something in Icelandic, stop
-3. Right-click the recording → **Share** → **Save to Files** → save it to the `audio/` folder
+3. Right-click the recording → **Share** → **Save to Files** → save it or drag it into the `audio/` folder
 4. Run:
 
 ```bash
