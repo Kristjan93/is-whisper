@@ -22,6 +22,18 @@ For Gemini correction (`--llm`), get an API key from https://aistudio.google.com
 echo "your-api-key" > .gemini_key
 ```
 
+## Try it
+
+The easiest way to test this is to record yourself speaking Icelandic and run it through the tool.
+
+On Mac, open **Voice Memos** (built-in app), record a short clip, then right-click the recording and choose **Share > Save to Files** to export it as an `.m4a` file. Drop it in the `audio/` folder and run:
+
+```bash
+python transcribe.py audio/your-recording.m4a --llm
+```
+
+You can also use **QuickTime Player** (File > New Audio Recording) which exports to `.m4a` as well.
+
 ## Why
 
 There aren't many good open source options for Icelandic speech-to-text. The [whisper-large-icelandic](https://huggingface.co/language-and-voice-lab/whisper-large-icelandic-62640-steps-967h-ct2) model from Language and Voice Lab is post-trained on 967 hours of Icelandic speech and runs locally via [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
