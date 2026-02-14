@@ -1,5 +1,7 @@
 # is-whisper
 
+![is-whisper cover](cover.png)
+
 Icelandic speech-to-text using a post-trained Whisper model.
 
 ## Setup
