@@ -24,13 +24,18 @@ echo "your-api-key" > .gemini_key
 
 ## Try it
 
-The easiest way to test this is to record yourself speaking Icelandic and run it through the tool.
+You can go from voice to text in under a minute:
 
-On Mac, open **Voice Memos** (built-in app), record a short clip, then right-click the recording and choose **Share > Save to Files** to export it as an `.m4a` file. Drop it in the `audio/` folder and run:
+1. Open **Voice Memos** on your Mac (it's already installed)
+2. Hit record, say something in Icelandic, stop
+3. Right-click the recording → **Share** → **Save to Files** → save it to the `audio/` folder
+4. Run:
 
 ```bash
 python transcribe.py audio/your-recording.m4a --llm
 ```
+
+That's it. Your spoken Icelandic comes back as text with punctuation. No account needed, no cloud service, everything runs on your machine.
 
 ## Why
 
