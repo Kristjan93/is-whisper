@@ -1,0 +1,33 @@
+# API Keys and Secrets
+.gemini_key
+.env
+.env.*
+
+# Virtual Environment
+venv/
+env/
+
+# Personal Audio Files
+audio/
+
+# Generated Transcripts
+transcripts/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Claude Code local settings
+.claude/settings.local.json
