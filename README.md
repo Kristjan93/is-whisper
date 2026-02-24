@@ -6,11 +6,22 @@ Icelandic speech-to-text using a post-trained Whisper model.
 
 ## Setup
 
-Requires **Python 3.9 - 3.12**. The `ctranslate2` engine (used by faster-whisper) ships pre-built binaries for these versions. Python 3.13+ may not work yet.
+Requires **Python 3.12**. The `ctranslate2` engine (used by faster-whisper) ships pre-built binaries for this version.
 
 ```bash
-python3 --version  # check you have 3.9-3.12
+pyenv install 3.12
+pyenv local 3.12
 
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+If you get `blake2b` hash errors, Homebrew updated OpenSSL after your Python was compiled. Fix it by recompiling:
+
+```bash
+pyenv install 3.12 --force
+rm -rf venv
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

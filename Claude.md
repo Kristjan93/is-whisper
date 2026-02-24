@@ -3,7 +3,7 @@
 ## Key Info
 - **Model:** `language-and-voice-lab/whisper-large-icelandic-62640-steps-967h-ct2`
 - **Hardware:** Any CPU (Mac, Linux, Windows) — `device="cpu"`, `compute_type="int8"`
-- **Python:** 3.9–3.12
+- **Python:** 3.12
 
 ## Files
 ```
