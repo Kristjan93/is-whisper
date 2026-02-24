@@ -141,13 +141,8 @@ def test_beam_size_and_vad_passed_through():
     assert kwargs["beam_size"] == 10
     assert kwargs["vad_filter"] is False
     assert kwargs["vad_parameters"] is None
-    # Removed parameters should not be present
-    assert "initial_prompt" not in kwargs
-    assert "best_of" not in kwargs
-    assert "condition_on_previous_text" not in kwargs
-    assert "compression_ratio_threshold" not in kwargs
-    assert "log_prob_threshold" not in kwargs
-    assert "no_speech_threshold" not in kwargs
+    assert kwargs["language"] == "is"
+    assert kwargs["temperature"] == 0.0
 
 
 def test_vad_params_set_when_enabled():

@@ -73,7 +73,7 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=False):
             "language_probability": info.language_probability,
             "model_load_time": model_load_time,
             "transcription_time": transcription_time,
-            "audio_file": audio_path,
+            "audio_file": str(Path(audio_path).resolve()),
         },
     }
 

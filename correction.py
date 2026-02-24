@@ -75,12 +75,15 @@ Text to correct:
         )
 
         result = response.parsed
+        if result is None:
+            print(f"{RED}Correction failed:{RESET} empty response from Gemini", file=sys.stderr)
+            return text
+
         if verbose:
             print(f"{GREEN}Corrected{RESET} {DIM}({result.confidence:.0%} confidence): {result.changes_summary}{RESET}", file=sys.stderr)
 
         return result.corrected_text
 
     except Exception as e:
-        if verbose:
-            print(f"{RED}Correction failed:{RESET} {e}", file=sys.stderr)
+        print(f"{RED}Correction failed:{RESET} {e}", file=sys.stderr)
         return text
