@@ -115,7 +115,7 @@ python transcribe.py <audio_file> [mode] [options]
 |------|-------------|
 | `--llm`, `-l` | Fix punctuation/grammar with Google Gemini |
 | `--save`, `-s` | Save output to `transcripts/` directory |
-| `--verbose`, `-v` | Show timestamps, timing, and progress |
+| `--verbose`, `-v` | Show per-segment timestamps |
 
 ### Output
 
@@ -145,20 +145,23 @@ Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
 
 ### Verbose mode
 
+Timing is always shown on stderr. With `-v` you also get per-segment timestamps:
+
 ```bash
 $ python transcribe.py audio/sample.m4a --llm -v
-Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
 ```
 
-stderr shows progress:
-
+stderr:
 ```
-Loading model...
-Transcribing: audio/sample.m4a
+Loading model... 3.2s
+Transcribing... 8.5s
   0.11s -> 0.61s  námsmaður í krossavík var lýtingur arnbjarnarson
-Duration: 5.0s | Time: 15.2s
-Fixing punctuation with Gemini...
-Corrected (95% confidence): Bætti við greinarmerki og lagaði hástafi.
+Correcting with Gemini... 1.2s
+```
+
+stdout:
+```
+Landnámsmaður í Krossavík var Lýtingur Arnbjarnarson.
 ```
 
 ### Save to files

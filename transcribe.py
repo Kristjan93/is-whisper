@@ -30,28 +30,22 @@ RESET = "\033[0m"
 
 def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=False):
     """Transcribe Icelandic audio. Returns dict with full_text, segments, metadata."""
-    if verbose:
-        print(f"{DIM}Loading model...{RESET}", file=sys.stderr)
-
+    print(f"{DIM}Loading model...{RESET}", end="", file=sys.stderr, flush=True)
+    t0 = time.time()
     model = WhisperModel(MODEL, device="cpu", compute_type="int8", cpu_threads=os.cpu_count())
+    model_load_time = time.time() - t0
+    print(f" {model_load_time:.1f}s", file=sys.stderr)
 
-    if verbose:
-        print(f"{DIM}Transcribing: {audio_path}{RESET}", file=sys.stderr)
-
-    start = time.time()
+    print(f"{DIM}Transcribing...{RESET}", end="", file=sys.stderr, flush=True)
+    t0 = time.time()
 
     segments, info = model.transcribe(
         audio_path,
         beam_size=beam_size,
         language="is",
-        best_of=5,
         temperature=0.0,
-        condition_on_previous_text=True,
         vad_filter=vad_filter,
         vad_parameters=dict(min_silence_duration_ms=500) if vad_filter else None,
-        compression_ratio_threshold=2.4,
-        log_prob_threshold=-0.8,
-        no_speech_threshold=0.6,
     )
 
     texts = []
@@ -67,10 +61,8 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=False):
         texts.append(text)
         details.append({"start": seg.start, "end": seg.end, "text": text})
 
-    elapsed = time.time() - start
-
-    if verbose:
-        print(f"{DIM}Duration: {info.duration:.1f}s | Time: {elapsed:.1f}s{RESET}", file=sys.stderr)
+    transcription_time = time.time() - t0
+    print(f" {transcription_time:.1f}s", file=sys.stderr)
 
     return {
         "full_text": " ".join(texts),
@@ -79,7 +71,8 @@ def transcribe(audio_path, beam_size=5, vad_filter=True, verbose=False):
             "audio_duration": info.duration,
             "language": info.language,
             "language_probability": info.language_probability,
-            "transcription_time": elapsed,
+            "model_load_time": model_load_time,
+            "transcription_time": transcription_time,
             "audio_file": audio_path,
         },
     }
@@ -98,7 +91,7 @@ def save_result(result, audio_path, corrected_text=None):
     print(f"{GREEN}Saved:{RESET} transcripts/{stem}_transcript.txt", file=sys.stderr)
     print(f"{GREEN}Saved:{RESET} transcripts/{stem}_transcript.json", file=sys.stderr)
 
-    if corrected_text:
+    if corrected_text is not None:
         (out / f"{stem}_corrected.txt").write_text(corrected_text, encoding="utf-8")
         print(f"{GREEN}Saved:{RESET} transcripts/{stem}_corrected.txt", file=sys.stderr)
 
@@ -160,9 +153,10 @@ if __name__ == "__main__":
     if use_llm:
         from correction import correct_icelandic
 
-        if verbose:
-            print(f"{CYAN}Fixing punctuation with Gemini...{RESET}", file=sys.stderr)
+        print(f"{DIM}Correcting with Gemini...{RESET}", end="", file=sys.stderr, flush=True)
+        t0 = time.time()
         corrected_text = correct_icelandic(text, verbose=verbose)
+        print(f" {time.time() - t0:.1f}s", file=sys.stderr)
         text = corrected_text
 
     print(text)

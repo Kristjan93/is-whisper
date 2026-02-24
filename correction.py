@@ -36,16 +36,22 @@ def correct_icelandic(text, verbose=False):
     """Send text to Gemini to fix punctuation and grammar. Returns corrected text."""
     client = genai.Client(api_key=load_api_key())
 
-    prompt = f"""Leiðrétta eftirfarandi íslenskan texta:
-- Laga stafsetningu og málfræði
-- Bæta við greinarmerki (kommur, punktar, spurningarmerki)
-- Laga há-/lágstafi
-- EKKI breyta orðalagi eða merkingu
+    prompt = f"""You are an Icelandic language expert. You are given raw output from automatic speech recognition (ASR).
 
-Texti:
-{text}
+The input has NO punctuation and NO capitalization — this is normal for ASR. Your job:
 
-Skila AÐEINS leiðréttum texta, engum útskýringum."""
+1. SENTENCES: Insert periods (.) where sentences end. Add commas where natural pauses occur.
+2. CAPITALIZATION: Capitalize the first letter of every sentence. Capitalize proper nouns (names, places).
+3. SPELLING: Fix obvious ASR misspellings and wrong word boundaries.
+4. GRAMMAR: Fix all grammatical errors to produce correct, natural Icelandic. ASR frequently gets verb forms, case, and agreement wrong.
+5. PRESERVE: Do NOT add or remove sentences. Do NOT change the meaning. Keep everything in Icelandic.
+
+Example:
+Input: halló ég heiti jón og ég bý í reykjavík það var eins og ég var að tala í tunnu
+Output: Halló, ég heiti Jón og ég bý í Reykjavík. Það var eins og ég væri að tala í tunnu.
+
+Text to correct:
+{text}"""
 
     try:
         response = client.models.generate_content(
@@ -53,7 +59,7 @@ Skila AÐEINS leiðréttum texta, engum útskýringum."""
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0,
-                max_output_tokens=2000,
+                max_output_tokens=16384,
                 response_mime_type="application/json",
                 response_schema=CorrectionResult,
                 safety_settings=[
